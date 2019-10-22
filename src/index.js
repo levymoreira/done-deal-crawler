@@ -1,5 +1,5 @@
 const fetch = require("node-fetch");
-const { Ads } = require('./repository')
+const { Ads, Photos, sequelize } = require('./repository')
 
 const getList = (start = 0) => {
     console.log('Fetching deals with start ', start)
@@ -47,25 +47,37 @@ const log = (msg) => console.log(new Date, msg)
 
 const main = async () => {
     log('Starging main')
+    await sequelize.sync()
 
-    let next;
+    let next = 0;
     do {
-        const { nextStart, ads } = await getList()
+        const { nextStart, ads } = await getList(next)
         next = nextStart;
         console.log('Numbe of ads ', ads.length, ' next start ', next)
 
+        const photos = ads.flatMap(ad => {
+            return ad.photos ? ad.photos.map(photo => ({
+                ...photo, 
+                adsId: ad.id
+            })): []
+        });
+
         const data = ads.map(ad => ({
-            ...ad,
             ...ad.section,
             section: null,
             ...ad.oldPriceView,
             oldPriceView: null,
             ...ad.seller,
-            seller: null
-            // photos?
+            sellerId: ad.seller.id,
+            seller: null,
+            ...ad
         }))
 
         await Ads.bulkCreate(data, {
+            updateOnDuplicate: ["id"] 
+        })
+
+        await Photos.bulkCreate(photos, {
             updateOnDuplicate: ["id"] 
         })
 
