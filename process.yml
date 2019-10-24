@@ -1,0 +1,9 @@
+apps:
+  - script: ./index.js
+    name: done:deal
+    restart_delay: 500
+    env:
+      DB_NAME: db
+      DB_HOST: localhost
+      DB_USER: root
+      DB_PASSWORD: root
